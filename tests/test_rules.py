@@ -33,3 +33,24 @@ def test_degenerate_tool_inputs_do_not_crash() -> None:
     huge = {"name": "large", "description": "x" * 100_000, "inputSchema": "not a schema"}
     result = scan_tools([malformed, huge])
     assert result.tools_scanned == 2
+
+
+def test_open_schema_resolves_refs_and_clean_is_clean() -> None:
+    nested_closed = tool(
+        schema={
+            "properties": {"data": {"$ref": "#/$defs/M"}},
+            "required": ["data"],
+            "$defs": {
+                "M": {
+                    "type": "object",
+                    "properties": {"message": {"type": "string"}},
+                    "additionalProperties": False,
+                }
+            },
+        }
+    )
+
+    assert not [item for item in run_rules(nested_closed) if item.rule_id == "MCC002"]
+    assert [item for item in run_rules(tool(schema={"type": "object"})) if item.rule_id == "MCC002"]
+    malformed_findings = run_rules({"name": "bad", "inputSchema": "oops"})
+    assert not [item for item in malformed_findings if item.rule_id == "MCC002"]

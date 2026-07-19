@@ -53,8 +53,8 @@ def injection_markers(tool: Any) -> list[Finding]:
 
 def open_schema(tool: Any) -> list[Finding]:
     schema = _schema(tool)
-    return (
-        [
+    if schema and not _schema_is_closed(schema):
+        return [
             _finding(
                 tool,
                 "MCC002",
@@ -63,9 +63,48 @@ def open_schema(tool: Any) -> list[Finding]:
                 "Set additionalProperties to false in the input schema.",
             )
         ]
-        if schema and schema.get("additionalProperties") is not False
-        else []
-    )
+    return []
+
+
+def _schema_is_closed(schema: dict[str, Any]) -> bool:
+    """Return whether every reachable object schema rejects undeclared fields."""
+    if not schema:
+        return True
+
+    definitions = schema.get("$defs", {})
+    if not isinstance(definitions, dict):
+        definitions = {}
+
+    seen: set[str] = set()
+
+    def visit(node: Any) -> list[dict[str, Any]]:
+        if not isinstance(node, dict):
+            return []
+        reference = node.get("$ref")
+        if isinstance(reference, str) and reference.startswith("#/$defs/"):
+            name = reference.removeprefix("#/$defs/")
+            if name in seen:
+                return []
+            seen.add(name)
+            return visit(definitions.get(name))
+
+        properties = node.get("properties", {})
+        property_values = list(properties.values()) if isinstance(properties, dict) else []
+        # FastMCP uses an object wrapper whose properties only reference Pydantic models.
+        # The model owns the extra-field contract, so do not flag that wrapper as open.
+        is_ref_wrapper = bool(property_values) and all(
+            isinstance(child, dict) and isinstance(child.get("$ref"), str)
+            for child in property_values
+        )
+        objects = [node] if node.get("type") == "object" and not is_ref_wrapper else []
+        for child in property_values:
+            objects.extend(visit(child))
+        for child in node.get("allOf", []) if isinstance(node.get("allOf"), list) else []:
+            objects.extend(visit(child))
+        return objects
+
+    reachable = visit(schema)
+    return bool(reachable) and all(node.get("additionalProperties") is False for node in reachable)
 
 
 def secret_reference(tool: Any) -> list[Finding]:
