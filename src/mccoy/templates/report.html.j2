@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>McCoy report</title>
+  <style>
+    body { font-family: ui-monospace, "IBM Plex Mono", monospace; margin: 2rem; color: #1f1f1f; }
+    .score { font-size: 1.5rem; font-weight: 700; }
+    .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 4px; color: #fff; font-size: 0.8rem; text-transform: uppercase; }
+    .badge.critical, .badge.high { background: #b91c1c; }
+    .badge.medium { background: #b45309; }
+    .badge.low { background: #4d7c0f; }
+    .badge.info { background: #6b7280; }
+    ul { line-height: 1.5; }
+    code { background: #f4f4f5; padding: 0.1rem 0.3rem; border-radius: 3px; }
+    pre { background: #f4f4f5; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>McCoy report</h1>
+  <p class="score">Score: {{ result.score }}/100</p>
+  <p>{{ result.findings | length }} finding(s) across {{ result.tools_scanned }} tool(s).</p>
+
+  <ul>
+  {% for finding in result.findings %}
+    <li>
+      <span class="badge {{ finding.severity }}">{{ finding.severity | upper }}</span>
+      <strong>{{ finding.rule_id }}</strong> {{ finding.tool }} — {{ finding.message }}
+      <br><code>{{ finding.fix_hint }}</code>
+      {% if finding.advisory %}
+        <br><em>Advisory:</em> {{ finding.advisory.message }}
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+
+  {% if diff %}
+  <h2>Before/after diff</h2>
+  <pre>{{ diff }}</pre>
+  {% endif %}
+</body>
+</html>
