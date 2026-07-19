@@ -1,0 +1,60 @@
+---
+import "../styles/tokens.css";
+import "../styles/landing.css";
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>McCoy — Scan your MCP servers. Auto-fix what's broken.</title>
+    <meta
+      name="description"
+      content="McCoy scans live MCP tool surfaces for deterministic security issues, advises with GPT-5.6, and auto-fixes with Codex."
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/">mccoy</a>
+        <nav class="nav">
+          <a href="/">Docs</a>
+          <a href="/quickstart/">Quickstart</a>
+          <a href="https://github.com/nitishagar/mccoy">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="hero">
+      <div class="hero-inner">
+        <h1>Scan your MCP servers.<br />Auto-fix what's broken.</h1>
+        <p class="subhead">
+          McCoy connects to any MCP server, runs eight deterministic security rules over its tool
+          surface, annotates the ambiguous ones with GPT-5.6, and drives Codex to patch what it
+          can — re-scanning until clean.
+        </p>
+        <div class="ctas">
+          <a class="cta primary" href="/install/">Install</a>
+          <a class="cta" href="/quickstart/">Quickstart</a>
+        </div>
+
+        <div class="terminal-demo">
+          <div class="terminal-title">mccoy scan fixtures/vuln_server/server.py</div>
+<pre><code>HIGH MCC001 unsafe_lookup: Description contains an instruction-injection marker.
+MEDIUM MCC002 unsafe_lookup: Input schema does not forbid unknown properties.
+HIGH MCC003 unsafe_lookup: Tool definition exposes a secret-looking reference.
+MEDIUM MCC005 unsafe_lookup: Tool description advertises a 0.0.0.0 bind.
+...
+12 finding(s) across 4 tool(s)
+exit=2</code></pre>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span>McCoy — built with Codex and GPT-5.6 for OpenAI Build Week 2026.</span>
+        <a href="https://github.com/nitishagar/mccoy">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

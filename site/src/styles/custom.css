@@ -1,0 +1,54 @@
+/* Starlight overrides — apply the opencode palette to Starlight's own surfaces and disable its
+   theme toggle (system-only dark mode, matching opencode.ai). */
+
+:root,
+:root[data-theme="light"] {
+  --sl-color-bg: var(--color-background);
+  --sl-color-bg-nav: var(--color-background-weak);
+  --sl-color-bg-sidebar: var(--color-background-weak);
+  --sl-color-bg-accent: var(--color-background-strong);
+  --sl-color-white: var(--color-text-strong);
+  --sl-color-gray-1: var(--color-text-strong);
+  --sl-color-gray-2: var(--color-text);
+  --sl-color-gray-3: var(--color-text);
+  --sl-color-gray-4: var(--color-border);
+  --sl-color-gray-5: var(--color-border);
+  --sl-color-gray-6: var(--color-background-weak);
+  --sl-color-gray-7: var(--color-background);
+  --sl-color-text: var(--color-text);
+  --sl-color-text-accent: var(--color-text-strong);
+  --sl-color-accent: var(--color-text-strong);
+}
+
+:root[data-theme="dark"] {
+  --sl-color-bg: var(--color-background);
+  --sl-color-bg-nav: var(--color-background-weak);
+  --sl-color-bg-sidebar: var(--color-background-weak);
+  --sl-color-bg-accent: var(--color-background-strong);
+  --sl-color-white: var(--color-text-strong);
+  --sl-color-gray-1: var(--color-text-strong);
+  --sl-color-gray-2: var(--color-text);
+  --sl-color-gray-3: var(--color-text);
+  --sl-color-gray-4: var(--color-border);
+  --sl-color-gray-5: var(--color-border);
+  --sl-color-gray-6: var(--color-background-weak);
+  --sl-color-gray-7: var(--color-background);
+  --sl-color-text: var(--color-text);
+  --sl-color-text-accent: var(--color-text-strong);
+  --sl-color-accent: var(--color-text-strong);
+}
+
+/* Square corners everywhere (opencode aesthetic via Expressive Code + this override) */
+:root {
+  --sl-border-radius: 0;
+}
+
+/* Hide Starlight's light/dark toggle — we follow the system preference only. */
+starlight-theme-select,
+[data-theme-switch] {
+  display: none !important;
+}
+
+body {
+  font-family: var(--sl-font);
+}

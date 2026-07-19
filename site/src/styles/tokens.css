@@ -1,0 +1,37 @@
+/* McCoy design tokens — mirrored from opencode.ai's verified palette.
+   Source: opencode.ai/docs/_astro/_id_.0W9MMnBd.css (re-verified 2026-07-19).
+   These exact HSL values are asserted by tests/test_site_tokens.py (D1 drift guard).
+   Dark mode is system-only (prefers-color-scheme), matching opencode.ai. */
+
+:root {
+  /* opencode.ai real token names */
+  --color-background: hsl(0, 20%, 99%);
+  --color-background-weak: hsl(0, 8%, 97%);
+  --color-background-strong: hsl(0, 5%, 12%);
+  --color-text: hsl(0, 1%, 39%);
+  --color-text-strong: hsl(0, 5%, 12%);
+  --color-border: hsl(30, 2%, 81%);
+  --color-border-weak: hsl(0, 1%, 85%);
+
+  /* Aliases for the names the plan/IMPLICIT_SPEC reference (D1) */
+  --color-bg: var(--color-background);
+  --color-surface: var(--color-background-weak);
+  --color-strong: var(--color-background-strong);
+
+  /* IBM Plex Mono as the primary typeface (confirmed on opencode.ai) */
+  --sl-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --sl-font-mono: var(--sl-font);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: hsl(0, 9%, 7%);
+    --color-background-weak: hsl(0, 6%, 10%);
+    --color-background-strong: hsl(0, 15%, 94%);
+    --color-text: hsl(0, 4%, 71%);
+    --color-text-strong: hsl(0, 15%, 94%);
+    --color-border: hsl(0, 3%, 28%);
+    --color-border-weak: hsl(0, 4%, 23%);
+  }
+}
