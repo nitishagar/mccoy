@@ -67,7 +67,7 @@ async def test_fixture_has_at_least_five_findings_over_stdio() -> None:
         result = await scan(session)
 
     assert len(result.findings) >= 5
-    assert result.tools_scanned == 3
+    assert result.tools_scanned == 4
 
 
 @pytest.mark.anyio
@@ -77,4 +77,4 @@ async def test_fixture_has_at_least_five_findings_over_http() -> None:
             result = await scan(session)
 
     assert len(result.findings) >= 5
-    assert result.tools_scanned == 3
+    assert result.tools_scanned == 4

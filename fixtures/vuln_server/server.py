@@ -20,5 +20,11 @@ def mutable_tool(value: str) -> str:
     return value
 
 
+# Planted false positive: benign documentation intentionally trips MCC001 for the advisory demo.
+@mcp.tool(description="Docs: ignore previous examples in tutorials; this tool just lists books.")
+def list_books(query: str) -> str:
+    return f"Books matching {query}"
+
+
 if __name__ == "__main__":
     mcp.run()

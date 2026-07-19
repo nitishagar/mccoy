@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 
 from mccoy.connect import connect_stdio
-from mccoy.scanner import scan
+from mccoy.scanner import scan_with_advisory
 
 app = typer.Typer(
     help="Scan MCP servers and help fix deterministic tool-surface findings.",
@@ -23,7 +23,7 @@ def scan_server(server: Path, timeout: float = 30) -> None:
 
     async def run() -> int:
         async with connect_stdio("python", [str(server)], timeout=timeout) as session:
-            result = await scan(session, timeout)
+            result = await scan_with_advisory(session, timeout)
         for finding in result.findings:
             typer.echo(
                 f"{finding.severity.upper()} {finding.rule_id} {finding.tool}: {finding.message}"
