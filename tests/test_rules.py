@@ -35,6 +35,15 @@ def test_degenerate_tool_inputs_do_not_crash() -> None:
     assert result.tools_scanned == 2
 
 
+def test_scan_of_empty_tool_list_is_clean() -> None:
+    # R1: an empty tool list is a degenerate input — it must produce a clean result, not crash.
+    result = scan_tools([])
+
+    assert result.tools_scanned == 0
+    assert result.is_clean
+    assert result.findings == []
+
+
 def test_open_schema_resolves_refs_and_clean_is_clean() -> None:
     nested_closed = tool(
         schema={

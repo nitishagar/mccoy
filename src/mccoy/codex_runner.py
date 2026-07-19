@@ -46,8 +46,15 @@ async def run_codex_fix(
     outcome = FixOutcome(thread_id=thread_id)
     try:
         assert process.stdout is not None
+        # R3: the JSONL stream is best-effort — codex may emit non-JSON lines (progress, warnings,
+        # partial flushes). Skip lines that don't parse rather than crashing; only kill+error on a
+        # real timeout or I/O failure. Without this, one malformed line leaks the subprocess and
+        # aborts the whole fix loop (violating graceful degradation).
         while line := await asyncio.wait_for(process.stdout.readline(), timeout):
-            event = json.loads(line)
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
             outcome.thread_id = event.get("thread_id", outcome.thread_id)
             if event.get("type") in {"turn.failed", "error"}:
                 outcome.error = str(event)
@@ -57,7 +64,12 @@ async def run_codex_fix(
                 outcome.patch_applied = True
         await process.wait()
     except TimeoutError:
-        process.kill()
-        await process.wait()
         outcome.error = "Codex timed out"
+    except OSError as error:
+        outcome.error = f"Codex I/O error: {error}"
+    finally:
+        # Always reap the process so a malformed line or timeout never leaks a subprocess.
+        if process.returncode is None:
+            process.kill()
+        await process.wait()
     return outcome
