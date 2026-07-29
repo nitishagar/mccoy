@@ -31,7 +31,7 @@ re-scans to verify — automatically.
 | `2`  | Unresolved findings remain |
 | `3`  | Infrastructure error (e.g. Codex CLI missing, server won't start) |
 
-## The thread id
+## After the loop
 
-Each Codex run records a `thread_id` in its JSONL stream. McCoy captures these so you can resume
-the session that did the work.
+When rounds complete, the CLI prints a severity-graded report and a before/after unified diff of
+the temp copy, then removes that copy. Codex sessions are ephemeral for this workflow.

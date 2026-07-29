@@ -3,10 +3,11 @@
 **Scan your MCP servers for deterministic security issues. Auto-fix what Codex can, and verify the
 result with a fresh scan.**
 
-McCoy connects to any MCP (Model Context Protocol) server over stdio or HTTP, enumerates its tool
-surface, runs a deterministic ruleset over each tool definition, optionally annotates ambiguous
-findings with a GPT-5.6 advisory pass, and drives Codex to patch the findings it can — re-scanning
-after each round until the server is clean or the iteration cap is reached.
+McCoy connects to a Python stdio MCP server (a `.py` file path), enumerates its tool surface, runs
+a deterministic ruleset over each tool definition, optionally annotates ambiguous findings with a
+GPT-5.6 advisory pass, and drives Codex to patch the findings it can — re-scanning after each round
+until the server is clean or the iteration cap is reached. Streamable HTTP is available via the
+library `connect_http` helper for programmatic use; the CLI itself speaks stdio only.
 
 ## Built with Codex and GPT-5.6
 
@@ -21,7 +22,7 @@ McCoy is an OpenAI Build Week 2026 project and both Codex and GPT-5.6 are first-
 - **Codex (fix-and-verify loop).** `mccoy fix` drives Codex against an isolated copy of your server
   source: it scans, asks Codex to patch each open finding, re-scans the patched copy, and repeats
   until the server is clean or the round cap is hit. The original files are never mutated in place.
-  Each Codex run records its `thread_id` so you can resume the session that did the work.
+  When the loop finishes, McCoy prints a graded report and a before/after diff of the temp copy.
 
 ## Install
 

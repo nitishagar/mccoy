@@ -3,10 +3,11 @@ title: Overview
 description: McCoy scans live MCP tool surfaces for deterministic security issues and helps fix them.
 ---
 
-McCoy connects to any MCP (Model Context Protocol) server over stdio or HTTP, enumerates its tool
-surface, runs a deterministic ruleset over each tool definition, optionally annotates ambiguous
-findings with a GPT-5.6 advisory pass, and drives Codex to patch the findings it can — re-scanning
-after each round until the server is clean or the iteration cap is reached.
+McCoy connects to a Python stdio MCP server (a `.py` file path), enumerates its tool surface, runs
+a deterministic ruleset over each tool definition, optionally annotates ambiguous findings with a
+GPT-5.6 advisory pass, and drives Codex to patch the findings it can — re-scanning after each round
+until the server is clean or the iteration cap is reached. Streamable HTTP is available via the
+library `connect_http` helper for programmatic use; the CLI itself speaks stdio only.
 
 ## Why
 
