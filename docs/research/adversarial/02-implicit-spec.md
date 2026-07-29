@@ -8,8 +8,8 @@ Authority chain (highest first):
 3. Public claims in `README.md`, `site/` — to be surgically narrowed where they overclaim.
 
 This document specifies **only** keep-list survivors: **I5 IMPLEMENT**, **DOC-I1 / DOC-I2 /
-DOC-I3**, and optional **FN (`fix_attempted`)**. It does not invent product surface the verifier
-rejected.
+DOC-I3**, and **FN (`fix_attempted`) via Option A xor B**. It does not invent product surface the
+verifier rejected. <!-- amended: validation -->
 
 ---
 
@@ -23,11 +23,11 @@ essay.
 
 | ID | Kind | Deliverable |
 |----|------|-------------|
-| I5 | IMPLEMENT | Terminal advisory visibility in `render_terminal` (and thus `mccoy scan` / `mccoy fix` stdout) |
+| I5 | IMPLEMENT | Terminal advisory visibility in `render_terminal` (used by `mccoy scan` and `mccoy fix`). Advisory objects appear on the scan path when keyed; fix path is unchanged — no advisory wiring (see I5-R7). <!-- amended: validation --> |
 | I1 | DOCUMENT-DOWN | Narrow “stdio or HTTP” claims to CLI stdio vs library HTTP |
 | I2 | DOCUMENT-DOWN | Narrow “any MCP server” to Python-stdio CLI scope |
 | I3 | DOCUMENT-DOWN | Remove / replace Codex resume promise |
-| FN | OPTIONAL | `fix_attempted` terminal visibility **or** doc-down of that implication |
+| FN | KEEP (A xor B) | Close via `fix_attempted` terminal marker **or** doc-down of that implication — path optional, closure required <!-- amended: validation --> |
 
 **Out of scope for this spec:** any item on the reject list in §2.
 
@@ -113,15 +113,20 @@ When present, terminal output SHOULD surface enough to distinguish benign annota
 
 - If `advisory.severity == Severity.INFO` (LLM said benign), indicate benign/docs context
   (label or severity token).
-- Include `confidence` when it is a meaningful float (tests use values like `0.9` / `0.95`).
+- Include `confidence` when `confidence > 0` (LLM-returned values; tests use `0.9` / `0.95`).
+  MAY omit the model default `0.0` on failure placeholders (`AdvisoryNote(message="LLM
+  unavailable — advisory pass skipped")` leaves confidence at `0.0`). <!-- amended: validation -->
 
 Exact formatting is implementation-defined; acceptance is content presence, not a fixed template.
 A format aligned with the HTML precedent (`Advisory: {message}`) plus confidence is sufficient.
 
 **I5-R3 — Pass-level status (should).**  
-When `result.metadata.get("advisory")` is set, terminal output SHOULD include that status string
-**once** (header or footer), so keyless vs keyed runs are distinguishable even when no finding
-carries an advisory object (e.g. skipped, or no MCC001 findings → `"not applicable"`).
+When `result.metadata.get("advisory")` is one of `"skipped (OPENAI_API_KEY unset)"`,
+`"completed"`, or `"not applicable"`, terminal output SHOULD include that status string **once**
+(header or footer), so keyless vs keyed runs are distinguishable even when no finding carries an
+advisory object. Do **not** treat metadata `"not run"` (set by `scan()` / `_scan_tools` before any
+advisory pass — including the `mccoy fix` path) as a status that SHOULD be printed; printing it
+would mislead fix-loop users. <!-- amended: validation -->
 
 **I5-R4 — Absent advisory (must).**  
 If `finding.advisory is None`, do **not** invent placeholder advisory text for that finding.
@@ -142,9 +147,9 @@ code unchanged (A1).
 **I5-R7 — Scope of call sites (must).**  
 Both `mccoy scan` and `mccoy fix` call `render_terminal`. I5 applies wherever that function is
 used. Note: `mccoy fix` currently uses `scan()` (no advisory) inside the loop — so fix-path
-findings typically have `advisory is None`. That is existing behavior; I5 does **not** require
-wiring advisory into the fix loop. **ASSUMPTION:** wiring advisory into `mccoy fix` is out of
-scope unless already present.
+findings have `advisory is None` and metadata `"not run"`. That is existing behavior; I5 does
+**not** require wiring `scan_with_advisory` into the fix loop. Wiring advisory into `mccoy fix`
+is **out of scope** for this spec (reject-adjacent scope creep). <!-- amended: validation -->
 
 **I5-R8 — No new commands / flags (must).**  
 No `--format`, no advisory-only flag. Visibility is default terminal output when data is present.
@@ -156,10 +161,10 @@ Add/extend tests under `tests/test_report.py` (and optionally CLI):
 | # | Criterion |
 |---|-----------|
 | AT-I5-1 | `render_terminal` with `AdvisoryNote(message="benign docs", …)` includes `"benign docs"` in output. |
-| AT-I5-2 | Same finding without advisory: output does **not** contain an `Advisory` label / invented advisory body. |
+| AT-I5-2 | Same finding without advisory: output does **not** contain `Advisory:` (HTML-precedent label) and has no second line whose sole job is an advisory body — finding stays the single `[SEVERITY] …` line (plus score/tools header lines). <!-- amended: validation --> |
 | AT-I5-3 | Advisory failure message `"LLM unavailable — advisory pass skipped"` appears when that note is attached. |
 | AT-I5-4 | Existing CLI tests still pass: vuln scan exit 2, clean exit 0, graded report contains `McCoy score:` and `MCC001`. |
-| AT-I5-5 | (Should) If metadata advisory status is rendered: keyless `scan_with_advisory` result’s metadata string starting with `skipped` appears in terminal when passed through `render_terminal`. |
+| AT-I5-5 | (Should) If I5-R3 is implemented: keyless `scan_with_advisory` result’s metadata string starting with `skipped` appears in terminal when passed through `render_terminal`. A `scan()` / fix-path result with metadata `"not run"` MUST NOT be required to print that token. <!-- amended: validation --> |
 
 **Manual / demo check (not necessarily automated):**  
 `OPENAI_API_KEY=… uv run mccoy scan fixtures/vuln_server/server.py` shows advisory text under the
@@ -179,6 +184,7 @@ planted FP MCC001 finding; without the key, no per-finding advisory lines (optio
 | Non-MCC001 findings | No advisory object; unchanged single-line findings. |
 | Empty findings / clean | Score 100; no advisory lines; exit 0. |
 | Multi-line advisory message | Full message still present in stdout (wrapping OK). |
+| `mccoy fix` / `scan()` result | `advisory is None`; metadata `"not run"` — no per-finding advisory lines; do not print `"not run"` as pass-level status (I5-R3). <!-- amended: validation --> |
 
 ### 4.5 Non-goals for I5
 
@@ -213,9 +219,14 @@ edits, public copy must not imply a shipped capability the CLI does not expose.
 - `site/src/content/docs/cli.md` (generated from help) — keep; do not edit by hand to invent `--url`.
 - `site/src/content/docs/quickstart.md`: “connects over stdio” — already honest.
 
-**Acceptance.** Grep of README + overview + landing for user-facing “HTTP” as a **CLI** connection
-mode returns no hit that asserts `mccoy scan` speaks HTTP. Mentions of library HTTP are OK if
-explicitly scoped (“library”, “programmatic”, `connect_http`).
+**Acceptance.** After edits:
+
+- `README.md` and `overview.md` MUST NOT contain the bare coupling phrase `stdio or HTTP` (or
+  equivalent) as an unqualified product/CLI capability.
+- Mentions of HTTP are OK only if explicitly scoped to library / programmatic / `connect_http`.
+- Landing MUST NOT newly claim HTTP CLI (it does not today).
+
+<!-- amended: validation — concrete forbidden phrase for testability -->
 
 **Non-goal:** Do not add `--url`. Do not remove `connect_http` from the codebase.
 
@@ -237,8 +248,9 @@ generic stdio processes but is not exposed by the CLI.
 
 **Surfaces already narrower:** CLI help / `cli.md` — preserve.
 
-**Acceptance.** No remaining user-facing marketing sentence that promises CLI support for
-arbitrary-language / arbitrary-command MCP servers without a library qualifier.
+**Acceptance.** After edits, `README.md`, `overview.md`, and `index.astro` MUST NOT contain the
+unbounded phrase `any MCP server` / `any MCP (` as a CLI capability claim. Scoped library notes
+(“library `connect_stdio` can launch …”) are OK. <!-- amended: validation -->
 
 **Non-goal:** Do not implement `--command` / `--args`.
 
@@ -263,9 +275,9 @@ copy-isolation.
 (hygiene optional; not required). Tests may keep asserting ID collection. **Do not** implement
 resume to make the old sentence true.
 
-**Acceptance.** Grep of `README.md` + `site/src/content/docs/fix-loop.md` for `resume` in the
-Codex / thread_id sense returns zero hits. (Unrelated English “resume” elsewhere is fine if none
-today.)
+**Acceptance.** Grep of `README.md` + `site/src/content/docs/fix-loop.md` for `resume` near
+`thread_id` / Codex session language returns zero hits. Unrelated English “resume” elsewhere
+(if any) is out of scope. <!-- amended: validation — drop self-contradictory “if none today” -->
 
 **Non-goal:** Persist `work_dir`, print actionable resume instructions, or pass resume flags to
 Codex.
@@ -284,13 +296,19 @@ CLI help remains the narrowest honest surface; marketing must not over-promise r
 
 ---
 
-## 6. Spec FN-optional — `fix_attempted` visibility or doc fix
+## 6. Spec FN — `fix_attempted` visibility or doc fix (A xor B required)
+
+Keep-list closure: implement **exactly one** of Option A or Option B. Skipping both leaves the
+false “report surfaces `fix_attempted`” implication intact. Which path is chosen is optional;
+closure is not. <!-- amended: validation -->
 
 ### 6.1 Problem
 
 - Loop restores `fix_attempted=True` on remaining findings after re-scan
   (`fix_loop._restore_attempt_state`).
-- Docstring claims the final report can tell the user which findings Codex tried.
+- `_restore_attempt_state` docstring motivates restore so “the final report could … tell the user
+  which findings Codex actually tried to fix”; the public `run_fix_loop` docstring says findings
+  carry `fix_attempted=True` into the returned result. <!-- amended: validation — accurate cite -->
 - `fix-loop.md`: “the finding is marked `fix_attempted`”.
 - `render_terminal` (and HTML) never show `fix_attempted`.
 
@@ -315,7 +333,7 @@ If Option A is not done:
 | File | Current implication | Replacement constraint |
 |------|---------------------|------------------------|
 | `site/src/content/docs/fix-loop.md` (Graceful degradation) | “marked `fix_attempted`” reads as user-visible report state | Clarify that `fix_attempted` is **internal loop state** (or omit the field name); do not imply the terminal report displays it. |
-| `src/mccoy/fix_loop.py` docstring | “final report could not tell the user…” / attempt history for the report | Soften to internal tracking for loop idempotency / tests, unless Option A ships. |
+| `src/mccoy/fix_loop.py` (`_restore_attempt_state` / `run_fix_loop` docstrings) | Implies attempt history exists for user-facing report | Soften to internal tracking for loop idempotency / tests, unless Option A ships. <!-- amended: validation --> |
 
 **Acceptance:** Docs no longer imply CLI users see `fix_attempted` in the report unless Option A
 is implemented.
@@ -335,7 +353,7 @@ is implemented.
 | 1 | **I5** IMPLEMENT in `render_terminal` + tests | Only must-implement code item; unblocks honest advisory demo. |
 | 2 | **DOC-I1 + DOC-I2** together | Same intro paragraphs in README/overview/landing; one editing pass. |
 | 3 | **DOC-I3** | Independent sentence/section delete; do with or right after 2. |
-| 4 | **FN** Option A piggyback on I5 renderer change, **or** Option B with DOC-I3 fix-loop edit | Optional; prefer A if touching the renderer. |
+| 4 | **FN** Option A piggyback on I5 renderer change, **or** Option B with DOC-I3 / fix-loop doc edit | Required keep-list closure (A xor B); prefer A if touching the renderer. <!-- amended: validation --> |
 
 Suggested PR split (optional): (1) I5 + tests (+ FN-A), (2) claim surgery I1–I3 (+ FN-B if A skipped).
 
@@ -348,8 +366,8 @@ Suggested PR split (optional): (1) I5 + tests (+ FN-A), (2) claim surgery I1–I
    demote to MAY without violating A1.
 2. **I5 confidence formatting:** Exact string form (`confidence=0.90` vs `90%`) is unspecified;
    pick one in implementation and lock with a test if desired.
-3. **FN default:** Prefer Option A vs B if schedule is tight after I5? Verifier allows either;
-   this spec prefers A when the renderer is already open.
+3. **FN path choice:** Prefer Option A vs B if schedule is tight after I5? Verifier allows either
+   (not neither); this spec prefers A when the renderer is already open. <!-- amended: validation -->
 4. **Library callouts in docs:** How prominently to mention `connect_http` / generic
    `connect_stdio` after narrowing CLI claims — one clause vs a dedicated “Library API” note.
    Either satisfies DOCUMENT-DOWN if CLI overclaims are gone.
@@ -366,7 +384,7 @@ Suggested PR split (optional): (1) I5 + tests (+ FN-A), (2) claim surgery I1–I
 | I1 DOCUMENT-DOWN | §5.1 |
 | I2 DOCUMENT-DOWN | §5.2 |
 | I3 DOCUMENT-DOWN | §5.3 |
-| FN optional | §6 |
+| FN (A xor B) | §6 |
 | Explicit rejects | §2 |
 
 No other inventory IDs (I4, I6–I8 IMPLEMENT) appear as requirements in this document.
