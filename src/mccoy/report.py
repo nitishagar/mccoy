@@ -13,7 +13,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from mccoy.models import ScanResult
+from mccoy.models import AdvisoryNote, Finding, ScanResult, Severity
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 _env = Environment(
@@ -23,14 +23,37 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
+# Pass statuses that are meaningful on the CLI; "not run" is the pre-advisory default
+# (including mccoy fix via scan()) and must not be printed (I5-R3).
+_ADVISORY_PASS_STATUSES = frozenset(
+    {"skipped (OPENAI_API_KEY unset)", "completed", "not applicable"}
+)
+
 
 def render_terminal(result: ScanResult) -> str:
     rows = [f"McCoy score: {result.score}/100", f"Tools scanned: {result.tools_scanned}"]
-    rows.extend(
-        f"[{item.severity.upper()}] {item.rule_id} {item.tool}: {item.message}"
-        for item in result.findings
-    )
+    status = result.metadata.get("advisory")
+    if status in _ADVISORY_PASS_STATUSES:
+        rows.append(f"Advisory pass: {status}")
+    for item in result.findings:
+        rows.append(_finding_line(item))
+        if item.advisory is not None:
+            rows.append(_advisory_line(item.advisory))
     return "\n".join(rows)
+
+
+def _finding_line(item: Finding) -> str:
+    return f"[{item.severity.upper()}] {item.rule_id} {item.tool}: {item.message}"
+
+
+def _advisory_line(note: AdvisoryNote) -> str:
+    extras: list[str] = []
+    if note.severity == Severity.INFO:
+        extras.append("benign")
+    if note.confidence > 0:
+        extras.append(f"confidence={note.confidence:.2f}")
+    suffix = f" ({', '.join(extras)})" if extras else ""
+    return f"  Advisory: {note.message}{suffix}"
 
 
 def render_html(result: ScanResult, diff: str = "") -> str:
