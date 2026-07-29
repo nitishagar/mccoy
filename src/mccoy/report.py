@@ -43,7 +43,10 @@ def render_terminal(result: ScanResult) -> str:
 
 
 def _finding_line(item: Finding) -> str:
-    return f"[{item.severity.upper()}] {item.rule_id} {item.tool}: {item.message}"
+    line = f"[{item.severity.upper()}] {item.rule_id} {item.tool}: {item.message}"
+    if item.fix_attempted:
+        line = f"{line} [fix attempted]"
+    return line
 
 
 def _advisory_line(note: AdvisoryNote) -> str:

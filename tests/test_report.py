@@ -79,6 +79,22 @@ def test_terminal_prints_advisory_pass_status_but_not_not_run() -> None:
     assert "Advisory pass:" not in render_terminal(not_run)
 
 
+def test_terminal_marks_fix_attempted_findings() -> None:
+    # FN-A-R1: attempted findings carry a clear adjacent marker.
+    attempted = _result()
+    attempted.findings[0].fix_attempted = True
+    out = render_terminal(attempted)
+    finding_line = next(line for line in out.splitlines() if line.startswith("[HIGH]"))
+    assert "fix attempted" in finding_line
+
+
+def test_terminal_omits_fix_attempted_marker_by_default() -> None:
+    # FN-A-R2: default/False findings have no marker.
+    out = render_terminal(_result())
+    finding_line = next(line for line in out.splitlines() if line.startswith("[HIGH]"))
+    assert "fix attempted" not in finding_line
+
+
 def test_html_report_contains_score_finding_hint_and_diff_block() -> None:
     html = render_html(_result(), "- unsafe\n+ safe")
 
